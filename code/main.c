@@ -19,6 +19,10 @@ Tomas Marcondes Bezerra Paim - 7157602
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
+  time_t rawtime;
+
+  rawtime = time(NULL);
+  printf(ctime(&rawtime));
   
   while(1) {
 
