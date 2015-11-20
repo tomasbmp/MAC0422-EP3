@@ -27,3 +27,22 @@ char** tokenize(char* str) {
 
   return tokens;
 }
+
+unsigned char setBit(int posicao, unsigned char byte, int bit) {
+	unsigned char setter;
+	
+	setter = 1;
+	setter <<= posicao;
+
+	if (bit == 0) setter = ~setter;
+
+	if (bit == 1) setter = setter|byte;
+	else setter = setter&byte;
+
+	return setter;
+}
+
+int devolveBit(int posicao, unsigned char byte) {
+	byte >>= posicao;
+	return byte%2;
+}

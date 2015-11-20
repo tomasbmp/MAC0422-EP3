@@ -16,14 +16,19 @@ Tomás Marcondes Bezerra Paim - 7157602
 #define TRUE 1
 #define FALSE 0
 
-typedef struct arq Arq;
-struct acesso
+typedef struct arquivo Arquivo;
+struct arquivo
 {
-  char     *nome;
-  int     tamBytes;
-  time_t instCriado;
-  time_t instModificado;
-  time_t instAcessado;
+  char     	*nome;
+  int     	tamBytes;
+  time_t 	instCriado;
+  time_t 	instModificado;
+  time_t 	instAcessado;
+  int 		diretorio
 };
 
 char** tokenize(char* str);
+
+unsigned char setBit(int posicao, unsigned char byte, int bit);
+
+int devolveBit(int posicao, unsigned char byte);
