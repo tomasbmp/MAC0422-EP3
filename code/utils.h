@@ -24,7 +24,7 @@ struct arquivo
   time_t 	instCriado;
   time_t 	instModificado;
   time_t 	instAcessado;
-  int 		diretorio
+  int 		diretorio;
 };
 
 char** tokenize(char* str);

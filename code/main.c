@@ -20,6 +20,10 @@ int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
   time_t rawtime;
+  int mounted = FALSE;
+  FILE *unidade;
+
+  unidade = NULL;
 
   rawtime = time(NULL);
   printf(ctime(&rawtime));
@@ -35,36 +39,70 @@ int main(){
     input = NULL; */
 
   	if (strcmp(argv[0], "mount") == 0) {
+      if(mounted == FALSE){
+          unidade = fopen(argv[1], "r+");
+          if(unidade == NULL){ /* arquivo não existe e deve ser criado */
+            unidade = fopen(argv[1], "w+");
+            if (unidade == NULL) {
+              printf ("ERRO: Unidade nao pode ser criada.\n");
+              return -1;
+            }
+          }
+          else {} /* realiza os procedimentos para retomar uma unidade */
+          mounted = TRUE;
+      }
+      else printf("Desmonte o sistema de arquivos atual para poder montar outro.\n");
 
   	}
     else if (strcmp(argv[0], "cp") == 0){
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {
+      }
 
     }
   	else if (strcmp(argv[0], "mkdir") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
 
   	}
   	else if (strcmp(argv[0], "rmdir") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
 
   	}
     else if (strcmp(argv[0], "cat") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
 
     }
     else if (strcmp(argv[0], "touch") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
 
   	}
   	else if (strcmp(argv[0], "rm") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
 
   	}
   	else if (strcmp(argv[0], "ls") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
   		
   	}
   	else if (strcmp(argv[0], "find") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
   		
   	}
   	else if (strcmp(argv[0], "df") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
   		
   	}
   	else if (strcmp(argv[0], "umount") == 0) {
+      if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
+      else {}
   		
   	}
     else if (strcmp(argv[0], "sai") == 0) {
