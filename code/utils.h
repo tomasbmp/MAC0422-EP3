@@ -14,6 +14,11 @@ Tomás Marcondes Bezerra Paim - 7157602
 
 #define BLOCKSIZE 4000
 #define MAPSIZE 3125
+#define WASTESEEK MAPSIZE
+#define LIVRESSEEK (MAPSIZE+4)
+#define QTYDSEEK (MAPSIZE+8)
+#define QTYFSEEK (MAPSIZE+12)
+#define ROOTSEEK (MAPSIZE+16)
 #define MAXCHAR 1024
 #define TRUE 1
 #define FALSE 0
