@@ -14,15 +14,15 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <string.h>
 #include "utils.h"
 
-char** tokenize(char* str) {
+char** tokenize(char *str, char *separator) {
   char** tokens = NULL;
   int i;
 
   tokens = malloc(sizeof (char*) * MAXCHAR);
-  tokens[0] = strtok(str, " ");
+  tokens[0] = strtok(str, separator);
 
   for(i = 1; tokens[i - 1] != NULL; i++) {
-    tokens[i] = strtok(NULL, " ");
+    tokens[i] = strtok(NULL, separator);
   }
 
   return tokens;
@@ -30,7 +30,7 @@ char** tokenize(char* str) {
 
 unsigned char setBit(int posicao, unsigned char byte, int bit) {
 	unsigned char setter;
-	
+
 	setter = 1;
 	setter <<= posicao;
 
