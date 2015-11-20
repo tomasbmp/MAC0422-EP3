@@ -1,4 +1,4 @@
-/*
+  /*
 
 MAC0422 - Sistemas Operacionais
     EP2 - 05/10/2015
@@ -29,7 +29,7 @@ int main(){
 
   rawtime = time(NULL);
   printf(ctime(&rawtime));
-  
+
   while(1) {
 
     snprintf(shell_prompt, sizeof(shell_prompt), "[ep3]: ");
@@ -101,22 +101,22 @@ int main(){
   	else if (strcmp(argv[0], "ls") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
       else {}
-  		
+
   	}
   	else if (strcmp(argv[0], "find") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
       else {}
-  		
+
   	}
   	else if (strcmp(argv[0], "df") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
       else {}
-  		
+
   	}
   	else if (strcmp(argv[0], "umount") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
       else {}
-  		
+
   	}
     else if (strcmp(argv[0], "sai") == 0) {
   		printf("Adeus.\n");
