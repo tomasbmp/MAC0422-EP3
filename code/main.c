@@ -89,8 +89,8 @@ int main(){
             memcpy(novo.nome, "root\0", 5);
             novo.tamBytes = 0;
             novo.instCriado = time(NULL);
-            novo.instModificado = time(NULL);
-            novo.instAcessado = time(NULL);
+            novo.instModificado = novo.instCriado;
+            novo.instAcessado = novo.instCriado;
             novo.diretorio = 0;
             novo.bloco = 26;
 
