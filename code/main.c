@@ -19,10 +19,10 @@ Tomas Marcondes Bezerra Paim - 7157602
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
-  int i;
+  int i, FAT[25600], wasted; /* 25600 e a quantidade de blocos em um sistema com 100Mb */
   time_t rawtime;
   int mounted = FALSE;
-  unsigned char bitmap[3200]; /* suficiente para armazenar 100Mb */
+  unsigned char bitmap[3200], c; /* suficiente para armazenar 100Mb */
   FILE *unidade;
 
   unidade = NULL;
@@ -51,17 +51,33 @@ int main(){
               printf ("ERRO: Unidade nao pode ser criada.\n");
               return -1;
             }
+            printf("Unidade nao encontrada. Criando nova unidade.\n");
             bitmap[0] = 0;
             bitmap[0] = setBit(0, bitmap[0], 1);
             fwrite (&bitmap[0], sizeof(bitmap[0]), 1, unidade);
 
-            for (i = 1; i < 3200; i++) {
+            for (i = 1; i < 3200; i++) { /* seta o bitmap */
               bitmap[i] = 0;
               fwrite (&bitmap[i], sizeof(bitmap[i]), 1, unidade);
             }
-            /* imprimeBitmap(bitmap); */
+            wasted = 892; /* quantidade de bytes nao utilizados neste primeiro bloco, */
+                          /* menos 4 bytes necessarios para armazenar a variavel wastes */
+
+            for(i = i; i < 104857600; i++){ /* cria o arquivo inteiro com 100Mb */
+              fwrite (&bitmap[1], sizeof(bitmap[1]), 1, unidade); 
+            }
+
+            fseek(unidade, 3200, SEEK_SET);
+            fwrite(&wasted, sizeof(wasted), 1, unidade);
           }
-          else {} /* realiza os procedimentos para retomar uma unidade */
+          else { /* realiza os procedimentos para retomar uma unidade */
+            printf("Estou retomando uma unidade criada anteriormente.\n");
+            fseek(unidade, 0, SEEK_SET);
+            for(i = 0; i < 3200; i++)
+              fread(&bitmap[i], sizeof(char), 1, unidade);
+
+            printf("%d\n", bitmap[0]);
+          } 
           mounted = TRUE;
       }
       else printf("Desmonte o sistema de arquivos atual para poder montar outro.\n");
@@ -115,7 +131,10 @@ int main(){
   	}
   	else if (strcmp(argv[0], "umount") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
-      else {}
+      else {
+        mounted = FALSE;
+        printf("Unidade desmontada com sucesso.\n");
+      }
   		
   	}
     else if (strcmp(argv[0], "sai") == 0) {
@@ -125,18 +144,18 @@ int main(){
 
 		else {
 			printf("Lista de comandos:\n");
-			printf("mount <arquivo>    			-- monta o sistema de arquivos contido em <arquivo>\n");
+			printf("mount <arquivo>        			-- monta o sistema de arquivos contido em <arquivo>\n");
 			printf("cp <origem> <destino>      	-- cria uma copia do arquivo <origem> em <destino>\n");
-			printf("mkdir <diretorio>   		-- cria o diretorio <diretorio>\n");
+			printf("mkdir <diretorio>   	    	-- cria o diretorio <diretorio>\n");
 			printf("rmdir <diretorio>           -- remove o diretorio <diretorio>\n");
-			printf("cat <arquivo> 				-- mostra o conteudo de <arquivo>\n");
-			printf("touch <arquivo> 			-- atualiza o ultimo acesso de <arquivo> para o instante atual");
-			printf("rm <arquivo> 				-- remove o arquivo <arquivo>");
-			printf("ls <diretorio> 				-- lista tudo abaixo do diretorio <diretorio>");
-			printf("find <diretorio> <arquivo> 	-- busca a partir de <diretorio> por <arquivo>");
-			printf("df 							-- imprime informacoes do sistema de arquivos");
-			printf("umount 						-- desmonta o sistema de arquivos");
-			printf("sai               			-- encerra o programa\n");
+			printf("cat <arquivo> 				      -- mostra o conteudo de <arquivo>\n");
+			printf("touch <arquivo> 	      		-- atualiza o ultimo acesso de <arquivo> para o instante atual\n");
+			printf("rm <arquivo> 				        -- remove o arquivo <arquivo>\n");
+			printf("ls <diretorio> 			       	-- lista tudo abaixo do diretorio <diretorio>\n");
+			printf("find <diretorio> <arquivo>  -- busca a partir de <diretorio> por <arquivo>\n");
+			printf("df 							            -- imprime informacoes do sistema de arquivos\n");
+			printf("umount 						          -- desmonta o sistema de arquivos\n");
+			printf("sai               		     	-- encerra o programa\n");
 		}
 
     if(argv != NULL){
