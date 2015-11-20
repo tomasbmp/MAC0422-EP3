@@ -13,4 +13,4 @@ Tomás Marcondes Bezerra Paim - 7157602
 #include <sys/time.h>
 #include "utils.h"
 
-void imprimeBitmap(unsigned char bitmap[3200]);
+void imprimeBitmap(unsigned char bitmap[MAPSIZE]);
