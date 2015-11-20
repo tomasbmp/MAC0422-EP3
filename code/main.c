@@ -16,6 +16,19 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <readline/history.h>
 #include "io.h"
 
+void catBloco(FILE *unidade, int i){
+  fseek(unidade, i * BLOCKSIZE, SEEK_SET)
+}
+
+void catArquivo(FILE *unidade, int *fat, int i){
+
+  while(i != -1){
+    i = fat[i];
+    catBloco(unidade, i);
+  }
+
+}
+
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
