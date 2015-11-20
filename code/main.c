@@ -22,6 +22,7 @@ int main(){
   int i;
   time_t rawtime;
   int mounted = FALSE;
+  int dirs = 0, arqs = 0;
   unsigned char bitmap[3200]; /* suficiente para armazenar 100Mb */
   FILE *unidade;
 

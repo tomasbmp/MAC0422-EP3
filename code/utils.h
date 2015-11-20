@@ -12,6 +12,7 @@ Tomás Marcondes Bezerra Paim - 7157602
 #include <string.h>
 #include <sys/time.h>
 
+#define BLOCK 4096
 #define MAXCHAR 1024
 #define TRUE 1
 #define FALSE 0
