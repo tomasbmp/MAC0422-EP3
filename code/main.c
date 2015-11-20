@@ -16,16 +16,21 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <readline/history.h>
 #include "io.h"
 
+int FAT[8*MAPSIZE], wasted, livres = 8*MAPSIZE, qtyF = 0, qtyD = 0; /* 8*MAPSIZE e a quantidade de blocos em um sistema com 100Mb */
+unsigned char bitmap[MAPSIZE]; /* suficiente para armazenar 100Mb */
+FILE *unidade;
+
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
-  int i, FAT[8*MAPSIZE], wasted; /* 25000 e a quantidade de blocos em um sistema com 100Mb */
+  int i;
   time_t rawtime;
   int mounted = FALSE;
-  unsigned char bitmap[MAPSIZE], c; /* suficiente para armazenar 100Mb */
-  FILE *unidade;
+  Arquivo novo;
 
   unidade = NULL;
+
+  printf("sizeof(Arquivo) = %d\n", sizeof(Arquivo));
 
   rawtime = time(NULL);
   printf(ctime(&rawtime));
@@ -54,30 +59,70 @@ int main(){
             printf("Unidade nao encontrada. Criando nova unidade...");
             bitmap[0] = 0;
             bitmap[0] = setBit(0, bitmap[0], 1);
+            livres--;
             fwrite (&bitmap[0], sizeof(bitmap[0]), 1, unidade);
 
             for (i = 1; i < MAPSIZE; i++) { /* seta o bitmap */
               bitmap[i] = 0;
               fwrite (&bitmap[i], sizeof(bitmap[i]), 1, unidade);
             }
-            wasted = 871; /* quantidade de bytes nao utilizados neste primeiro bloco, */
-                          /* menos 4 bytes necessarios para armazenar a variavel wastes */
+            wasted = BLOCKSIZE - MAPSIZE - 4 - 4 - 4 - 4; /* quantidade de bytes nao utilizados neste primeiro bloco, */
+                          /* menos 4 bytes necessarios para armazenar a variavel wastes, */
+                          /* menos 4 bytes necessarios para armazenar a variavel livres, */
+                          /* menos 4 bytes necessarios para armazenar a variavel qtyD, */
+                          /* menos 4 bytes necessarios para armazenar a variavel qtyF */
 
-            for(i = i; i < 100000000; i++){ /* cria o arquivo inteiro com 100Mb */
+            for(; i < 100000000; i++){ /* cria o arquivo inteiro com 100Mb */
               fwrite (&bitmap[1], sizeof(bitmap[1]), 1, unidade); 
             }
 
+            for(i = 0; i < MAPSIZE*8; i++){ /* inicializa todas as posicoes de FAT com -1 */
+              setFAT(-1, i);
+            }
+
+            for(i = 1; i < 26; i++){ /* seta os blocos usados pela tabela FAT */
+              setBloco(i, 1);
+              livres--;
+            }
+
+
+            memcpy(novo.nome, "root\0", 5);
+            novo.tamBytes = 0;
+            novo.instCriado = time(NULL);
+            novo.instModificado = time(NULL);
+            novo.instAcessado = time(NULL);
+            novo.diretorio = 0;
+            novo.bloco = 26;
+
+            qtyD++;
+
+            wasted -= sizeof(Arquivo);
+
+            setBloco(26, 1);
+            livres--;
+
             fseek(unidade, MAPSIZE, SEEK_SET);
-            fwrite(&wasted, sizeof(wasted), 1, unidade);
+            fwrite(&wasted, sizeof(wasted), 1, unidade);  /* MAPSIZE */
+            fwrite(&livres, sizeof(livres), 1, unidade);  /* MAPSIZE + 4 */
+            fwrite(&qtyD, sizeof(qtyD), 1, unidade);      /* MAPSIZE + 8 */
+            fwrite(&qtyF, sizeof(qtyF), 1, unidade);      /* MAPSIZE + 12 */
+            fwrite(&novo, sizeof(Arquivo), 1, unidade);   /* MAPSIZE + 16 */
+
             printf(" Unidade criada com sucesso!\n");
+            printf("livres = %d (deveria ser 24972\n", livres);
           }
           else { /* realiza os procedimentos para retomar uma unidade */
             printf("Estou retomando uma unidade criada anteriormente.\n");
             fseek(unidade, 0, SEEK_SET);
-            for(i = 0; i < MAPSIZE; i++)
-              fread(&bitmap[i], sizeof(char), 1, unidade);
+            for(i = 0; i < MAPSIZE; i++) fread(&bitmap[i], sizeof(char), 1, unidade);
+            fread(&wasted, sizeof(wasted), 1, unidade);  /* MAPSIZE */
+            fread(&livres, sizeof(livres), 1, unidade);  /* MAPSIZE + 4 */
+            fread(&qtyD, sizeof(qtyD), 1, unidade);      /* MAPSIZE + 8 */
+            fread(&qtyF, sizeof(qtyF), 1, unidade);      /* MAPSIZE + 12 */
 
-            printf("%d\n", bitmap[0]);
+            fseek(unidade, BLOCKSIZE, SEEK_SET);
+            for (i = 0; i < MAPSIZE*8; i++) fread(&FAT[i], sizeof(int), 1, unidade);
+
           } 
           mounted = TRUE;
       }
@@ -171,6 +216,9 @@ int main(){
 
   if(argv != NULL)
   	free(argv);
+
+  if(unidade != NULL)
+    fclose(unidade);
 
   return 0;
 }
