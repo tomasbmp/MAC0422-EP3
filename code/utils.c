@@ -42,7 +42,34 @@ unsigned char setBit(int posicao, unsigned char byte, int bit) {
 	return setter;
 }
 
+void setBloco(int bloco, int bit){
+	int i, j;
+	i = bloco/8;
+	j = bloco%8;
+
+	bitmap[i] = setBit(j, bitmap[i], bit);
+	fseek(unidade, i, SEEK_SET);
+	fwrite(&bitmap[i], sizeof(bitmap[i]), 1, unidade);
+}
+
 int devolveBit(int posicao, unsigned char byte) {
 	byte >>= posicao;
 	return byte%2;
+}
+
+int procuraBloco(){
+  int i, j, livre = -1;
+  for (i = 0; (i < MAPSIZE) && (livre < 0); i++){
+    for (j = 0; (j < 8) && (livre < 0); j++){
+      if (devolveBit(j, bitmap[i]) == 0)
+        livre = 8*i+j;
+    }
+  }
+  return livre;
+}
+
+void setFAT(int conteudo, int posicao){
+	fat[posicao] = conteudo;
+	fseek(unidade, BLOCKSIZE+4*posicao, SEEK_SET);
+	fwrite(&fat[posicao], sizeof(int), 1, unidade);
 }
