@@ -14,13 +14,15 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <sys/time.h>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "utils.h"
+#include "io.h"
 
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
+  int i;
   time_t rawtime;
   int mounted = FALSE;
+  unsigned char bitmap[3200]; /* suficiente para armazenar 100Mb */
   FILE *unidade;
 
   unidade = NULL;
@@ -38,6 +40,8 @@ int main(){
     /* free(input);
     input = NULL; */
 
+
+
   	if (strcmp(argv[0], "mount") == 0) {
       if(mounted == FALSE){
           unidade = fopen(argv[1], "r+");
@@ -47,6 +51,15 @@ int main(){
               printf ("ERRO: Unidade nao pode ser criada.\n");
               return -1;
             }
+            bitmap[0] = 0;
+            bitmap[0] = setBit(0, bitmap[0], 1);
+            fwrite (&bitmap[0], sizeof(bitmap[0]), 1, unidade);
+
+            for (i = 1; i < 3200; i++) {
+              bitmap[i] = 0;
+              fwrite (&bitmap[i], sizeof(bitmap[i]), 1, unidade);
+            }
+            /* imprimeBitmap(bitmap); */
           }
           else {} /* realiza os procedimentos para retomar uma unidade */
           mounted = TRUE;
