@@ -32,11 +32,10 @@ void catArquivo(FILE *unidade, int *fat, int i){
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
-  int i;
+  int i, FAT[8*MAPSIZE], wasted; /* 25000 e a quantidade de blocos em um sistema com 100Mb */
   time_t rawtime;
   int mounted = FALSE;
-  int dirs = 0, arqs = 0;
-  unsigned char bitmap[3200]; /* suficiente para armazenar 100Mb */
+  unsigned char bitmap[MAPSIZE], c; /* suficiente para armazenar 100Mb */
   FILE *unidade;
 
   unidade = NULL;
@@ -65,17 +64,36 @@ int main(){
               printf ("ERRO: Unidade nao pode ser criada.\n");
               return -1;
             }
+
+            printf("Unidade nao encontrada. Criando nova unidade...");
             bitmap[0] = 0;
             bitmap[0] = setBit(0, bitmap[0], 1);
             fwrite (&bitmap[0], sizeof(bitmap[0]), 1, unidade);
 
-            for (i = 1; i < 3200; i++) {
+            for (i = 1; i < MAPSIZE; i++) { /* seta o bitmap */
               bitmap[i] = 0;
               fwrite (&bitmap[i], sizeof(bitmap[i]), 1, unidade);
             }
-            /* imprimeBitmap(bitmap); */
+            wasted = 871; /* quantidade de bytes nao utilizados neste primeiro bloco, */
+                          /* menos 4 bytes necessarios para armazenar a variavel wastes */
+
+            for(i = i; i < 100000000; i++){ /* cria o arquivo inteiro com 100Mb */
+              fwrite (&bitmap[1], sizeof(bitmap[1]), 1, unidade);
+            }
+
+            fseek(unidade, MAPSIZE, SEEK_SET);
+            fwrite(&wasted, sizeof(wasted), 1, unidade);
+            printf(" Unidade criada com sucesso!\n");
           }
-          else {} /* realiza os procedimentos para retomar uma unidade */
+          else { /* realiza os procedimentos para retomar uma unidade */
+            printf("Estou retomando uma unidade criada anteriormente.\n");
+            fseek(unidade, 0, SEEK_SET);
+            for(i = 0; i < MAPSIZE; i++)
+              fread(&bitmap[i], sizeof(char), 1, unidade);
+
+            printf("%d\n", bitmap[0]);
+          }
+
           mounted = TRUE;
       }
       else printf("Desmonte o sistema de arquivos atual para poder montar outro.\n");
@@ -129,8 +147,13 @@ int main(){
   	}
   	else if (strcmp(argv[0], "umount") == 0) {
       if(mounted == FALSE) printf("Monte um arquivo antes de realizar este comando.\n");
-      else {}
 
+      else {
+        mounted = FALSE;
+        fclose(unidade);
+        printf("Unidade desmontada com sucesso.\n");
+      }
+      
   	}
     else if (strcmp(argv[0], "sai") == 0) {
   		printf("Adeus.\n");

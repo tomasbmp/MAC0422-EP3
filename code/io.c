@@ -11,9 +11,9 @@ Tomás Marcondes Bezerra Paim - 7157602
 #include <stdio.h>
 #include "io.h"
 
-void imprimeBitmap (unsigned char bitmap[3200]){
+void imprimeBitmap (unsigned char bitmap[MAPSIZE]){
 	int i, j;
-	for(i = 0; i < 3200; i++){
+	for(i = 0; i < MAPSIZE; i++){
 		for(j = 0; j < 8; j++)
 			printf("%d", devolveBit(j, bitmap[i]));
 	}
