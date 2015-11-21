@@ -24,7 +24,7 @@ FILE *unidade;
 Arquivo leArquivo(int i){
   Arquivo arq;
 
-  fseek(unidade, i*BLOCKSIZE, SEEK_SET);
+  fseek(unidade, i, SEEK_SET);
   fread(&arq, sizeof(Arquivo), 1, unidade);
   return arq;
 }
@@ -57,7 +57,6 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
       fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
       tamanho -= BLOCKSIZE;
     }
-    printf("%d\n", j);
     /* "reserva" o espaço a ser lido */
     j += sizeof(Arquivo);
     /* se reservamos mais do que o tamanho total do diretorio,
@@ -157,7 +156,7 @@ void cpArquivo(char *origem, char *destino){
     printf("Diretorio de destino inexistente.\n");
     return;
   }
-  else if(dir.diretorio >= 0){
+  else if(dir.diretorio < 0){
     printf("O destino deve ser um diretorio.\n");
     return;
   }
