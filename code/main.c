@@ -53,7 +53,7 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
       bloco = fat[bloco];
       /* proximo bloco "nao existe",
       condicao de parada: nao encontramos o arquivo */
-      if(bloco == -1) return -1;
+      if(bloco == -1) break;
       fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
       tamanho -= BLOCKSIZE;
     }
@@ -62,7 +62,8 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
     j += sizeof(Arquivo);
     /* se reservamos mais do que o tamanho total do diretorio,
     condicao de parada: nao encontramos o arquivo */
-    if(j > tamanho) return -1;
+    if(j > tamanho) break;
+
     fread(&arq, sizeof(Arquivo), 1, unidade);
   }while(strcmp(arq.nome, paradas[i]) != 0);
   /* encontramos o arquivo no diretorio */
