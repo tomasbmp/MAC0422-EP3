@@ -44,6 +44,7 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
   bloco = diretorio.bloco;
 
   fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
+
   do{
     /* se reservamos mais do que o tamanho de um bloco,
     vê na tabela FAT o endereço do próximo */
@@ -56,6 +57,7 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
       fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
       tamanho -= BLOCKSIZE;
     }
+    printf("%d\n", j);
     /* "reserva" o espaço a ser lido */
     j += sizeof(Arquivo);
     /* se reservamos mais do que o tamanho total do diretorio,
@@ -91,7 +93,6 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
 
   /* nao e a ultima parada, chamamos de novo com o indice incrementado e as informacoes do diretorio */
   return getArquivoRec(paradas, i, diretorio, apartamento, option);
-
 }
 
 int getArquivo(char *caminho, int option){
@@ -129,7 +130,7 @@ void catArquivo(FILE *unidade, char *caminho, int *fat){
   }
 }
 
-void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino, int *fat){
+void cpArquivo(char *origem, char *destino){
   Arquivo dir, novo;
   FILE *file_origem = NULL;
   int i, bloco, tamanho, arquivos_restantes;
@@ -161,7 +162,7 @@ void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino
   }
 
   arquivos_restantes = dir.diretorio;
-  for(bloco = dir.bloco; bloco != -1; bloco = fat[bloco])
+  for(bloco = dir.bloco; fat[bloco] != -1; bloco = fat[bloco])
     arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
 
   if(arquivos_restantes*sizeof(Arquivo) + sizeof(Arquivo) > BLOCKSIZE){
@@ -249,7 +250,7 @@ void touchArquivo(char *caminho){
   i = getArquivo(str, ADD);
 
   arquivos_restantes = dir.diretorio;
-  for(bloco = dir.bloco; bloco != -1; bloco = fat[bloco])
+  for(bloco = dir.bloco; fat[bloco] != -1; bloco = fat[bloco])
     arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
 
   if(arquivos_restantes*sizeof(Arquivo) + sizeof(Arquivo) > BLOCKSIZE){
@@ -386,7 +387,7 @@ int main(){
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
       else if (argv[1] == NULL) printf("cp: insira o caminho da origem.\n");
       else if (argv[2] == NULL) printf("cp: insira o caminho do destino.\n");
-      else cpArquivo(unidade, bitmap, argv[1], argv[2], fat);
+      else cpArquivo(argv[1], argv[2]);
     }
   	else if (strcmp(argv[0], "mkdir") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
