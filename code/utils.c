@@ -14,6 +14,30 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <string.h>
 #include "utils.h"
 
+void addD(){
+  qtyD++;
+  fseek(unidade, QTYDSEEK, SEEK_SET);
+  fwrite(&qtyD, sizeof(int), 1, unidade);
+}
+
+void rmD(){
+  qtyD--;
+  fseek(unidade, QTYDSEEK, SEEK_SET);
+  fwrite(&qtyD, sizeof(int), 1, unidade);
+}
+
+void addF(){
+  qtyF++;
+  fseek(unidade, QTYFSEEK, SEEK_SET);
+  fwrite(&qtyF, sizeof(int), 1, unidade);
+}
+
+void rmF(){
+  qtyF--;
+  fseek(unidade, QTYFSEEK, SEEK_SET);
+  fwrite(&qtyF, sizeof(int), 1, unidade);
+}
+
 char** tokenize(char *str, char *separator) {
   char** tokens = NULL;
   int i;

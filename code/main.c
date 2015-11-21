@@ -16,19 +16,24 @@ Tomas Marcondes Bezerra Paim - 7157602
 #include <readline/history.h>
 #include "io.h"
 
-static Arquivo root;
-static Arquivo erro;
 
 int fat[8*MAPSIZE], wasted, livres = 8*MAPSIZE, qtyF = 0, qtyD = 0; /* 8*MAPSIZE e a quantidade de blocos em um sistema com 100Mb */
 unsigned char bitmap[MAPSIZE]; /* suficiente para armazenar 100Mb */
 FILE *unidade;
 
-/* funcao recursiva que retorna struct com dados do arquivo dado pelo caminho */
-Arquivo getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  int option){
+Arquivo leArquivo(int i){
+  Arquivo arq;
+
+  fseek(unidade, i*BLOCKSIZE, SEEK_SET);
+  fread(&arq, sizeof(Arquivo), 1, unidade);
+  return arq;
+}
+
+/* funcao recursiva que retorna endereco absoluto do arquivo dado pelo caminho */
+int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  int option){
   Arquivo arq;
   int tamanho, bloco, apartamento;
-  int j;
-  j = 0;
+  int j = 0;
 
   diretorio.instAcessado = time(NULL);
   diretorio.instModificado = arq.instAcessado;
@@ -47,7 +52,7 @@ Arquivo getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,
       bloco = fat[bloco];
       /* proximo bloco "nao existe",
       condicao de parada: nao encontramos o arquivo */
-      if(bloco == -1) return erro;
+      if(bloco == -1) return -1;
       fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
       tamanho -= BLOCKSIZE;
     }
@@ -55,11 +60,12 @@ Arquivo getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,
     j += sizeof(Arquivo);
     /* se reservamos mais do que o tamanho total do diretorio,
     condicao de parada: nao encontramos o arquivo */
-    if(j > tamanho) return erro;
+    if(j > tamanho) return -1;
     fread(&arq, sizeof(Arquivo), 1, unidade);
   }while(strcmp(arq.nome, paradas[i]) != 0);
   /* encontramos o arquivo no diretorio */
 
+  apartamento = bloco*BLOCKSIZE + j - sizeof(Arquivo);
 
   i++;
   /* condicao de parada: e a ultima parada no caminho */
@@ -74,19 +80,26 @@ Arquivo getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,
       diretorio.diretorio--;
       fseek(unidade, enderecoPai, SEEK_SET);
       fwrite(&diretorio, sizeof(Arquivo), 1, unidade);
+    }else if (option == TOUCH){
+      arq.instAcessado = time(NULL);
+      fseek(unidade, -sizeof(Arquivo), SEEK_CUR);
+      fwrite(&arq, sizeof(Arquivo), 1, unidade);
     }
 
-    return arq;
+    return apartamento;
   }
 
-  apartamento = bloco*BLOCKSIZE + j - sizeof(Arquivo);
   /* nao e a ultima parada, chamamos de novo com o indice incrementado e as informacoes do diretorio */
   return getArquivoRec(paradas, i, diretorio, apartamento, option);
 
 }
 
-Arquivo getArquivo(char *caminho, int option){
+int getArquivo(char *caminho, int option){
+  Arquivo root;
   char **paradas = NULL;
+
+  fseek(unidade, ROOTSEEK, SEEK_SET);
+  fread(&root, sizeof(Arquivo), 1, unidade);
 
   paradas = tokenize(caminho, "/");
   return getArquivoRec(paradas, 0, root, ROOTSEEK, option);
@@ -97,15 +110,16 @@ void catArquivo(FILE *unidade, char *caminho, int *fat){
   int i, tamanho;
   char c;
 
-  arq = getArquivo(caminho, VISIT);
+  i = getArquivo(caminho, VISIT);
 
-  i = arq.bloco;
-  tamanho = arq.tamBytes;
   if(i == -1) printf("Arquivo nao encontrado.\n");
+
+  arq = leArquivo(i);
+  tamanho = arq.tamBytes;
 
   while(i != -1){
     i = fat[i];
-    fseek(unidade, i * BLOCKSIZE, SEEK_SET);
+    fseek(unidade, i*BLOCKSIZE, SEEK_SET);
     /* presumindo que o bloco so contem o arquivo */
     for(i = 0; i < tamanho || i < BLOCKSIZE; i++){
       fread(&c, sizeof(char), 1, unidade);
@@ -134,8 +148,10 @@ void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino
     return;
   }
 
-  dir = getArquivo(destino, ADD);
-  if(dir.bloco == -1){
+  i = getArquivo(destino, ADD);
+  dir = leArquivo(i);
+
+  if(i == -1){
     printf("Diretorio de destino inexistente.\n");
     return;
   }
@@ -148,23 +164,25 @@ void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino
   for(bloco = dir.bloco; bloco != -1; bloco = fat[bloco])
     arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
 
-  if(arquivos_restantes + sizeof(Arquivo) > BLOCKSIZE){
+  if(arquivos_restantes*sizeof(Arquivo) + sizeof(Arquivo) > BLOCKSIZE){
     if(livres == 0){
-      dir = getArquivo(destino, REMOVE);
+      i = getArquivo(destino, REMOVE);
+      dir = leArquivo(i);
       printf("Espaco insuficiente.\n");
       fclose(file_origem);
       return;
     }
     livres--;
 
+    arquivos_restantes = 0;
+    wasted += BLOCKSIZE - sizeof(Arquivo);
     setFAT(procuraBloco(bitmap), bloco);
     setFAT(-1, fat[bloco]);
   }
+  else wasted -= sizeof(Arquivo);
 
-  arquivos_restantes++;
   livres -= tamanho/BLOCKSIZE;
-  wasted += BLOCKSIZE - arquivos_restantes*sizeof(Arquivo);
-  fseek(unidade, MAPSIZE, SEEK_SET);
+  fseek(unidade, WASTESEEK, SEEK_SET);
   fwrite(&wasted, sizeof(wasted), 1, unidade);
   fwrite(&livres, sizeof(livres), 1, unidade);
 
@@ -186,6 +204,7 @@ void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino
   fseek(file_origem, 0, SEEK_SET);
   for(i = 0; i < tamanho; i++){
     if(i > BLOCKSIZE){
+      tamanho -= BLOCKSIZE;
       i = 0;
       setFAT(procuraBloco(bitmap), bloco);
       setFAT(-1, fat[bloco]);
@@ -196,7 +215,61 @@ void cpArquivo(FILE *unidade, unsigned char *bitmap, char *origem, char *destino
     fwrite(&c, sizeof(char), 1, unidade);
   }
 
+  addF();
   fclose(file_origem);
+}
+
+void touchArquivo(char *caminho){
+  Arquivo arq, dir;
+  char **paradas = NULL;
+  char str[MAXCHAR];
+  int i, arquivos_restantes, bloco;
+
+  i = getArquivo(caminho, TOUCH);
+  arq = leArquivo(i);
+  paradas = tokenize(caminho, "/");
+  strcpy(str, "/");
+  for(i = 0; paradas[i+2] != NULL; i++){
+    strncat(str, paradas[i], 13);
+    strncat(str, "/", 13);
+  }
+
+  if(arq.bloco != -1){
+    printf("Arquivo %s acessado.\n", caminho);
+    return;
+  }
+
+  strcpy(arq.nome, paradas[i+1]);
+  arq.tamBytes = 0;
+  arq.instCriado = time(NULL);
+  arq.instModificado = arq.instCriado;
+  arq.instAcessado = arq.instCriado;
+  arq.diretorio = -1;
+
+  i = getArquivo(str, ADD);
+
+  arquivos_restantes = dir.diretorio;
+  for(bloco = dir.bloco; bloco != -1; bloco = fat[bloco])
+    arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
+
+  if(arquivos_restantes*sizeof(Arquivo) + sizeof(Arquivo) > BLOCKSIZE){
+    if(livres == 0){
+      i = getArquivo(str, REMOVE);
+      dir = leArquivo(i);
+      printf("Espaco insuficiente.\n");
+      return;
+    }
+    livres--;
+
+    arquivos_restantes = 0;
+    wasted += BLOCKSIZE - sizeof(Arquivo);
+  }
+  else wasted -= sizeof(Arquivo);
+
+  addF();
+  fseek(unidade, WASTESEEK, SEEK_SET);
+  fwrite(&wasted, sizeof(wasted), 1, unidade);
+  fwrite(&livres, sizeof(livres), 1, unidade);
 }
 
 int main(){
@@ -208,7 +281,6 @@ int main(){
   Arquivo novo;
 
   unidade = NULL;
-  erro.bloco = -1;
 
   printf("sizeof(Arquivo) = %lu\n", sizeof(Arquivo));
 
@@ -224,7 +296,6 @@ int main(){
     argv = tokenize(input, " ");
     /* free(input);
     input = NULL; */
-
 
 
   	if (strcmp(argv[0], "mount") == 0) {
