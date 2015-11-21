@@ -22,6 +22,9 @@ Tomás Marcondes Bezerra Paim - 7157602
 #define MAXCHAR 1024
 #define TRUE 1
 #define FALSE 0
+#define ADD 1
+#define VISIT 0
+#define REMOVE -1
 
 extern int fat[8*MAPSIZE], wasted, livres, qtyF, qtyD; /* 8*MAPSIZE e a quantidade de blocos em um sistema com 100Mb */
 extern unsigned char bitmap[MAPSIZE]; /* suficiente para armazenar 100Mb */
