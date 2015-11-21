@@ -73,13 +73,16 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
     case LS :
       apartamento = enderecoPai;
       break;
+    case ADD:
+      apartamento = enderecoPai;
     default:
       apartamento = bloco*BLOCKSIZE + j - sizeof(Arquivo);
       break;
   }
-  
+
 
   i++;
+  printf("apartamento: %d", apartamento);
   /* condicao de parada: e a ultima parada no caminho */
   if((paradas[i] == NULL)||(paradas[i-1] == NULL)){
     if(option == ADD){
@@ -116,9 +119,9 @@ int getArquivo(char *caminho, int option){
   return getArquivoRec(paradas, 0, root, ROOTSEEK, option);
 }
 
-void catArquivo(FILE *unidade, char *caminho, int *fat){
+void catArquivo(char *caminho){
   Arquivo arq;
-  int i, tamanho;
+  int i, tamanho, bloco;
   char c;
 
   i = getArquivo(caminho, VISIT);
@@ -127,12 +130,13 @@ void catArquivo(FILE *unidade, char *caminho, int *fat){
 
   arq = leArquivo(i);
   tamanho = arq.tamBytes;
+  bloco = arq.bloco;
 
-  while(i != -1){
-    i = fat[i];
-    fseek(unidade, i*BLOCKSIZE, SEEK_SET);
+  while(bloco != -1){
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    bloco = fat[bloco];
     /* presumindo que o bloco so contem o arquivo */
-    for(i = 0; i < tamanho || i < BLOCKSIZE; i++){
+    for(i = 0; i < tamanho && i < BLOCKSIZE; i++){
       fread(&c, sizeof(char), 1, unidade);
       printf("%c", c);
     }
@@ -161,6 +165,7 @@ void cpArquivo(char *origem, char *destino){
 
   i = getArquivo(destino, ADD);
   dir = leArquivo(i);
+  printf("i: %d ROOTSEEK: %d\n", i, ROOTSEEK);
 
   if(i == -1){
     printf("Diretorio de destino inexistente.\n");
@@ -171,7 +176,7 @@ void cpArquivo(char *origem, char *destino){
     return;
   }
 
-  arquivos_restantes = dir.diretorio;
+  arquivos_restantes = dir.diretorio-1;
   for(bloco = dir.bloco; fat[bloco] != -1; bloco = fat[bloco])
     arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
 
@@ -400,7 +405,6 @@ int main(){
             fwrite(&novo, sizeof(Arquivo), 1, unidade);   /* MAPSIZE + 16 */
 
             printf(" Unidade criada com sucesso!\n");
-            printf("livres = %d (deveria ser 24972\n", livres);
           }
           else { /* realiza os procedimentos para retomar uma unidade */
             printf("Estou retomando uma unidade criada anteriormente.\n");
@@ -440,7 +444,7 @@ int main(){
     else if (strcmp(argv[0], "cat") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
       else if (argv[1] == NULL) printf("cat: insira o caminho do arquivo.\n");
-      else catArquivo(unidade, argv[1], fat);
+      else catArquivo(argv[1]);
 
     }
     else if (strcmp(argv[0], "touch") == 0) {

@@ -22,3 +22,4 @@ clean:
 	mkdir -p ../bin
 	mv ep3 ../bin/
 	rm *.o
+	rm unidade
