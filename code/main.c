@@ -1,7 +1,7 @@
   /*
 
 MAC0422 - Sistemas Operacionais
-    EP2 - 05/10/2015
+    EP3 - 22/11/2015
 
 Guilherme Souto Schützer     - 8658544
 Tomas Marcondes Bezerra Paim - 7157602
@@ -40,38 +40,48 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int enderecoPai,  in
   fseek(unidade, enderecoPai, SEEK_SET);
   fwrite(&diretorio, sizeof(Arquivo), 1, unidade);
 
-  tamanho = diretorio.tamBytes;
+  tamanho = diretorio.diretorio;
   bloco = diretorio.bloco;
 
   fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
 
-  do{
-    /* se reservamos mais do que o tamanho de um bloco,
-    vê na tabela FAT o endereço do próximo */
-    if(j > BLOCKSIZE) {
-      j = 0;
-      bloco = fat[bloco];
-      /* proximo bloco "nao existe",
+  if(tamanho > 0){
+    do{
+      /* se reservamos mais do que o tamanho de um bloco,
+      vê na tabela FAT o endereço do próximo */
+      if(j > BLOCKSIZE/sizeof(Arquivo)) {
+        j = 0;
+        bloco = fat[bloco];
+        /* proximo bloco "nao existe",
+        condicao de parada: nao encontramos o arquivo */
+        if(bloco == -1) break;
+        fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
+        tamanho -= BLOCKSIZE;
+      }
+      /* "reserva" o espaço a ser lido */
+      j ++;
+      /* se reservamos mais do que o tamanho total do diretorio,
       condicao de parada: nao encontramos o arquivo */
-      if(bloco == -1) break;
-      fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
-      tamanho -= BLOCKSIZE;
-    }
-    /* "reserva" o espaço a ser lido */
-    j += sizeof(Arquivo);
-    /* se reservamos mais do que o tamanho total do diretorio,
-    condicao de parada: nao encontramos o arquivo */
-    if(j > tamanho) break;
+      if(j > tamanho) break;
 
-    fread(&arq, sizeof(Arquivo), 1, unidade);
-  }while(strcmp(arq.nome, paradas[i]) != 0);
-  /* encontramos o arquivo no diretorio */
+      fread(&arq, sizeof(Arquivo), 1, unidade);
+    }while(strcmp(arq.nome, paradas[i]) != 0);
+    /* encontramos o arquivo no diretorio */
+  }
 
-  apartamento = bloco*BLOCKSIZE + j - sizeof(Arquivo);
+  switch (option){
+    case LS :
+      apartamento = enderecoPai;
+      break;
+    default:
+      apartamento = bloco*BLOCKSIZE + j - sizeof(Arquivo);
+      break;
+  }
+  
 
   i++;
   /* condicao de parada: e a ultima parada no caminho */
-  if(paradas[i] == NULL){
+  if((paradas[i] == NULL)||(paradas[i-1] == NULL)){
     if(option == ADD){
       diretorio.tamBytes += sizeof(Arquivo);
       diretorio.diretorio++;
@@ -273,6 +283,34 @@ void touchArquivo(char *caminho){
   fwrite(&livres, sizeof(livres), 1, unidade);
 }
 
+void lsArquivo(char *caminho){
+  int tamanho, endereco, bloco, i;
+  Arquivo dir, file;
+
+  endereco = getArquivo (caminho, LS);
+  dir = leArquivo(endereco);
+  bloco = dir.bloco;
+
+  tamanho = dir.diretorio;
+  fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+  if(dir.diretorio == 0) (printf("Este diretorio esta vazio.\n"));
+  else printf ("d?|    nome    | tamanho em bytes | ultima modificacao");
+  for(i = 0; i < tamanho; i++){
+    if(i >= BLOCKSIZE/sizeof(Arquivo) ){
+      tamanho -= i;
+      i = 0;
+      bloco = fat[bloco];
+      fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    }
+
+    fread(&file, sizeof(Arquivo), 1, unidade);
+    if(file.diretorio >=0)  printf("* |");
+    printf("%12s|", file.nome);
+    printf("%18d|", file.tamBytes);
+    printf(ctime(&file.instModificado));
+  }
+}
+
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
@@ -417,7 +455,8 @@ int main(){
   	}
   	else if (strcmp(argv[0], "ls") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else if (argv[1] == NULL) printf("cat: insira o caminho do diretorio.\n");
+      else lsArquivo(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "find") == 0) {

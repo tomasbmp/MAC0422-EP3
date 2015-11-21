@@ -1,7 +1,7 @@
 /*
 
 MAC0422 - Sistemas Operacionais
-    EP2 - 05/10/2015
+    EP3 - 22/11/2015
 
 Guilherme Souto Schützer     - 8658544
 Tomás Marcondes Bezerra Paim - 7157602
@@ -26,6 +26,7 @@ Tomás Marcondes Bezerra Paim - 7157602
 #define VISIT 0
 #define REMOVE -1
 #define TOUCH 2
+#define LS 3
 
 extern int fat[8*MAPSIZE], wasted, livres, qtyF, qtyD; /* 8*MAPSIZE e a quantidade de blocos em um sistema com 100Mb */
 extern unsigned char bitmap[MAPSIZE]; /* suficiente para armazenar 100Mb */
