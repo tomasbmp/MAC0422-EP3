@@ -38,7 +38,7 @@ struct arquivo
   time_t 	instCriado;
   time_t 	instModificado;
   time_t 	instAcessado;
-  int     bloco;
+  int     	bloco;
   int 		diretorio;
 };
 
