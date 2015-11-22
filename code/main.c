@@ -234,6 +234,9 @@ void cpArquivo(char *origem, char *destino){
   }
 
   addF();
+  fseek(unidade, WASTESEEK, SEEK_SET);
+  fwrite(&wasted, sizeof(wasted), 1, unidade);
+  fwrite(&livres, sizeof(livres), 1, unidade);
   fclose(file_origem);
 }
 
@@ -241,50 +244,92 @@ void touchArquivo(char *caminho){
   Arquivo arq, dir;
   char **paradas = NULL;
   char str[MAXCHAR];
-  int end, arquivos_restantes, bloco, i;
+  int end, arquivos, bloco, i, j, endvago = -1, newblock;
 
   end = getArquivo(caminho, PAI);
-  arq = leArquivo(end);
+  dir = leArquivo(end);
   paradas = tokenize(caminho, "/");
-  strcpy(str, "/");
-  for(i = 0; paradas[i+2] != NULL; i++){
-    strncat(str, paradas[i], 13);
-    strncat(str, "/", 13);
+  for(i = 0; paradas[i+1] != NULL; i++);
+  strcpy(str, paradas[i]);
+  
+  bloco = dir.bloco;
+  arquivos = dir.diretorio;
+  j = 0;
+  i = 0;
+  fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+
+  while (i < arquivos){
+    if (j > ARQPERBLOCK){
+      j = 0;
+      bloco = fat[bloco];
+      fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    }
+    fread(&arq, sizeof(Arquivo), 1, unidade);
+    printf("Fiz um arqread\n");
+    if(strlen(arq.nome) != 0){
+      if (strcmp(arq.nome, str) == 0){
+        printf("Achei nome igual!\n");
+        arq.instModificado = dir.instAcessado; /* !!! VOLTAR AQUI !!! */
+        fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
+        fwrite(&arq, sizeof(Arquivo), 1, unidade);
+        return;
+      }
+      i++;
+    }
+    else if (endvago == -1) endvago = bloco*BLOCKSIZE + j*sizeof(Arquivo);
+    j++;
+    printf("Cheguei no final do while.\n");
   }
 
-  if(arq.bloco != -1){
-    printf("Arquivo %s acessado.\n", caminho);
-    return;
-  }
-
+  printf("Sai do while.\n");
+  /* se chegou aqui entao o arquivo nao existe e sera criado */
   strcpy(arq.nome, paradas[i+1]);
   arq.tamBytes = 0;
-  arq.instCriado = time(NULL);
+  arq.instCriado = dir.instAcessado;
   arq.instModificado = arq.instCriado;
   arq.instAcessado = arq.instCriado;
   arq.diretorio = -1;
 
-  end = getArquivo(str, FINAL);
-
-  arquivos_restantes = dir.diretorio;
-  for(bloco = dir.bloco; fat[bloco] != -1; bloco = fat[bloco])
-    arquivos_restantes -= BLOCKSIZE/sizeof(Arquivo);
-
-  if(arquivos_restantes*sizeof(Arquivo) + sizeof(Arquivo) > BLOCKSIZE){
-    if(livres == 0){
-      i = getArquivo(str, FINAL);
-      dir = leArquivo(i);
+  if((j == ARQPERBLOCK)&&(endvago != -1)){ /* teremos que alocar um bloco novo para o diretorio */
+    if (livres < 2){
       printf("Espaco insuficiente.\n");
       return;
     }
+    newblock = procuraBloco();
+    setFAT(newblock, bloco);
+    setFAT(-1, newblock);
+    setBloco(newblock, 1);
     livres--;
-
-    arquivos_restantes = 0;
-    wasted += BLOCKSIZE - sizeof(Arquivo);
+    bloco = newblock;
+    fseek(unidade, newblock*BLOCKSIZE, SEEK_SET);
+    wasted += (BLOCKSIZE - sizeof(Arquivo));
   }
-  else wasted -= sizeof(Arquivo);
+  else {
+    if (livres < 1){
+      printf("Espaco insuficiente.\n");
+      return;
+    }
+    if (endvago == -1)  fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
+    else fseek(unidade, endvago, SEEK_SET);
+    wasted -= sizeof(Arquivo);
+  }
 
+  dir.diretorio++;
+  dir.tamBytes += sizeof(Arquivo);
+
+  newblock = procuraBloco();
+  
+
+  arq.bloco = newblock;
+  fwrite(&arq, sizeof(Arquivo), 1, unidade);
+  fseek(unidade, end, SEEK_SET);
+  fwrite(&dir, sizeof(Arquivo), 1, unidade);
+
+  setBloco(newblock, 1);
+  livres--;
   addF();
+
+  
   fseek(unidade, WASTESEEK, SEEK_SET);
   fwrite(&wasted, sizeof(wasted), 1, unidade);
   fwrite(&livres, sizeof(livres), 1, unidade);
@@ -455,7 +500,8 @@ int main(){
     }
     else if (strcmp(argv[0], "touch") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else if (argv[1] == NULL) printf("cat: insira o caminho do arquivo.\n");
+      else touchArquivo(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "rm") == 0) {
