@@ -42,8 +42,11 @@ struct arquivo
   int 		diretorio;
 };
 
+
 void addF();
+void addD();
 void rmF();
+void rmD();
 
 char** tokenize(char *str, char *separator);
 

@@ -38,17 +38,17 @@ void rmF(){
   fwrite(&qtyF, sizeof(int), 1, unidade);
 }
 
-char** tokenize(char *str, char *separator) {
-  char** tokens = NULL;
+char **tokenize(char *str, char *separator) {
+  char **tokens = NULL;
   int i;
-
+  
   tokens = malloc(sizeof (char*) * MAXCHAR);
+
   tokens[0] = strtok(str, separator);
 
   for(i = 1; tokens[i - 1] != NULL; i++) {
     tokens[i] = strtok(NULL, separator);
   }
-
   return tokens;
 }
 
