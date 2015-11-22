@@ -351,9 +351,8 @@ void lsArquivo(char *caminho){
 
   tamanho = dir.diretorio;
   fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
-  printf("quantidade de arquivos = %d\n", dir.diretorio);
   if(dir.diretorio == 0) (printf("Este diretorio esta vazio.\n"));
-  else printf ("\nd?|    nome    | tamanho em bytes | ultima modificacao\n");
+  else printf ("d?|    nome    | tamanho em bytes | ultima modificacao\n");
   j = 0;
   i = 0;
   while(i < tamanho){
