@@ -19,14 +19,12 @@ Tomás Marcondes Bezerra Paim - 7157602
 #define QTYDSEEK (MAPSIZE+8)
 #define QTYFSEEK (MAPSIZE+12)
 #define ROOTSEEK (MAPSIZE+16)
+#define ARQPERBLOCK (BLOCKSIZE/sizeof(Arquivo))
 #define MAXCHAR 256
 #define TRUE 1
 #define FALSE 0
-#define ADD 1
-#define VISIT 0
-#define REMOVE -1
-#define TOUCH 2
-#define LS 3
+#define PAI 0
+#define FINAL 1
 
 extern int fat[8*MAPSIZE], wasted, livres, qtyF, qtyD; /* 8*MAPSIZE e a quantidade de blocos em um sistema com 100Mb */
 extern unsigned char bitmap[MAPSIZE]; /* suficiente para armazenar 100Mb */
@@ -56,5 +54,7 @@ void setBloco(int bloco, int bit);
 int devolveBit(int posicao, unsigned char byte);
 
 int procuraBloco();
+
+int qtyBlocks(int arquivos);
 
 void setFAT(int conteudo, int posicao);

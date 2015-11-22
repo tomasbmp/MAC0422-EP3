@@ -92,6 +92,10 @@ int procuraBloco(){
   return livre;
 }
 
+int qtyBlocks(int arquivos){	
+	return (arquivos/ARQPERBLOCK)+1;
+}
+
 void setFAT(int conteudo, int posicao){
 	fat[posicao] = conteudo;
 	fseek(unidade, BLOCKSIZE+4*posicao, SEEK_SET);
