@@ -79,8 +79,6 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int endereco,  int o
   return -1;
 }
 
-
-
 int getArquivo(char *caminho, int option){
   Arquivo root;
   char **paradas = NULL;
@@ -161,7 +159,6 @@ void cpArquivo(char *origem, char *destino){
     return;
   }
 
-
   if(newblock != 0){
     newblock = procuraBloco();
     setBloco(newblock, 1);
@@ -184,7 +181,7 @@ void cpArquivo(char *origem, char *destino){
   novo.diretorio = -1;
 
   if(newblock != 0){
-    fseek(unidade, bloco*BLOCKSIZE + (dir.diretorio%ARQPERBLOCK)*sizeof(Arquivo), SEEK_SET);
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
     fwrite(&novo, sizeof(novo), 1, unidade);
   }
   else{
@@ -252,7 +249,7 @@ void touchArquivo(char *caminho){
   paradas = tokenize(caminho, "/");
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(str, paradas[i]);
-  
+
   bloco = dir.bloco;
   arquivos = dir.diretorio;
   j = 0;
@@ -319,7 +316,7 @@ void touchArquivo(char *caminho){
   dir.tamBytes += sizeof(Arquivo);
 
   newblock = procuraBloco();
-  
+
 
   arq.bloco = newblock;
   fwrite(&arq, sizeof(Arquivo), 1, unidade);
@@ -330,7 +327,7 @@ void touchArquivo(char *caminho){
   livres--;
   addF();
 
-  
+
   fseek(unidade, WASTESEEK, SEEK_SET);
   fwrite(&wasted, sizeof(wasted), 1, unidade);
   fwrite(&livres, sizeof(livres), 1, unidade);
@@ -366,6 +363,93 @@ void lsArquivo(char *caminho){
     printf(" ");
     printf(ctime(&file.instModificado));
   }
+}
+
+void mkDir(char *caminho){
+  Arquivo dir, novo, arq;
+  int i, arquivos, end, bloco, newblock = FALSE;
+  char **paradas;
+
+  end = getArquivo(caminho, PAI);
+  dir = leArquivo(end);
+
+  if(end == -1){
+    printf("Diretorio de destino inexistente.\n");
+    return;
+  }
+  else if(dir.diretorio < 0){
+    printf("O destino deve ser um diretorio.\n");
+    return;
+  }
+
+  bloco = dir.bloco;
+  i = 1;
+  while(fat[bloco] != -1){
+   bloco = fat[bloco];
+   i++;
+  }
+
+  if(dir.diretorio == ARQPERBLOCK*i) newblock = TRUE;
+
+  if(newblock != 0){
+    if(livres == 0) return;
+    newblock = procuraBloco();
+    setBloco(newblock, 1);
+    livres--;
+    setFAT(newblock, fat[bloco]);
+    setFAT(-1, fat[newblock]);
+    bloco = newblock;
+    wasted += (BLOCKSIZE - sizeof(Arquivo));
+  }
+  else wasted -= sizeof(Arquivo);
+
+  paradas = tokenize(caminho, "/");
+  for(i = 0; paradas[i+1] != NULL; i++);
+  strcpy(novo.nome, paradas[i]);
+  novo.tamBytes = 0;
+  novo.instCriado = time(NULL);
+  novo.instModificado = novo.instCriado;
+  novo.instAcessado = novo.instCriado;
+  novo.bloco = procuraBloco(bitmap);
+  novo.diretorio = 0;
+
+  if(newblock != 0){
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    fwrite(&novo, sizeof(novo), 1, unidade);
+  }
+  else{
+    bloco = dir.bloco;
+    arquivos = dir.diretorio;
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    for(i = 0; i < arquivos; i++){
+      if (i > ARQPERBLOCK){
+        bloco = fat[bloco];
+        fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+        i = 0;
+        arquivos -= ARQPERBLOCK;
+      }
+      fread(&arq, sizeof(Arquivo), 1, unidade);
+      if(strlen(arq.nome) == 0){ /* este espaco esta vazio */
+        break;
+      }
+    }
+    fseek(unidade, bloco*BLOCKSIZE + i*sizeof(Arquivo), SEEK_SET);
+    fwrite(&novo, sizeof(novo), 1, unidade);
+  }
+
+  dir.tamBytes += sizeof(Arquivo);
+  dir.diretorio++;
+  fseek(unidade, end, SEEK_SET);
+  fwrite(&dir, sizeof(dir), 1, unidade);
+
+  bloco = novo.bloco;
+  setBloco(novo.bloco, 1);
+  livres--;
+
+  addD();
+  fseek(unidade, WASTESEEK, SEEK_SET);
+  fwrite(&wasted, sizeof(wasted), 1, unidade);
+  fwrite(&livres, sizeof(livres), 1, unidade);
 }
 
 int main(){
@@ -482,7 +566,7 @@ int main(){
     }
   	else if (strcmp(argv[0], "mkdir") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else mkDir(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "rmdir") == 0) {
