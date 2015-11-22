@@ -383,14 +383,14 @@ void rmArquivo(char *caminho){
   Arquivo arq, dir;
   char **paradas = NULL;
   char str[MAXCHAR];
-  int end, arquivos, bloco, i, j, endvago = -1, newblock, aux;
+  int end, arquivos, bloco, i, j, aux;
 
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
   paradas = tokenize(caminho, "/");
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(str, paradas[i]);
-  
+
   bloco = dir.bloco;
   arquivos = dir.diretorio;
   j = 0;
@@ -405,17 +405,17 @@ void rmArquivo(char *caminho){
     }
     fread(&arq, sizeof(Arquivo), 1, unidade);
     if(strlen(arq.nome) != 0){
-      if (strcmp(arq.nome, str) == 0){  
+      if (strcmp(arq.nome, str) == 0){
         memcpy(arq.nome, "\0", 1);
         wasted += sizeof(Arquivo);
         dir.diretorio--;
         dir.tamBytes -= sizeof(Arquivo);
-        rmF;
+        rmF();
         if(arq.tamBytes%BLOCKSIZE != 0) wasted -= BLOCKSIZE - (arq.tamBytes%BLOCKSIZE);
         fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
         fwrite(&arq, sizeof(Arquivo), 1, unidade);
         for (bloco = arq.bloco; bloco != -1; bloco = aux){
-          
+
           aux = fat[bloco];
           setFAT(-1, bloco);
           setBloco(bloco, 0);
