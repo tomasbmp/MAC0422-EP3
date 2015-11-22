@@ -100,5 +100,4 @@ void setFAT(int conteudo, int posicao){
 	fat[posicao] = conteudo;
 	fseek(unidade, BLOCKSIZE+4*posicao, SEEK_SET);
 	fwrite(&fat[posicao], sizeof(int), 1, unidade);
-	printf("[%d]", fat[posicao]);
 }

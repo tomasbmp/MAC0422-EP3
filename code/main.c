@@ -183,7 +183,7 @@ void cpArquivo(char *origem, char *destino){
   novo.diretorio = -1;
 
   if(newblock != 0){
-    fseek(unidade, bloco*BLOCKSIZE + (dir.diretorio%ARQPERBLOCK)*sizeof(Arquivo), SEEK_SET);
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
     fwrite(&novo, sizeof(novo), 1, unidade);
   }
   else{
@@ -265,11 +265,9 @@ void touchArquivo(char *caminho){
       fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
     }
     fread(&arq, sizeof(Arquivo), 1, unidade);
-    printf("Fiz um arqread\n");
     if(strlen(arq.nome) != 0){
-      if (strcmp(arq.nome, str) == 0){
-        printf("Achei nome igual!\n");
-        arq.instModificado = dir.instAcessado; /* !!! VOLTAR AQUI !!! */
+      if (strcmp(arq.nome, str) == 0){  
+        arq.instAcessado = dir.instAcessado;
         fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
         fwrite(&arq, sizeof(Arquivo), 1, unidade);
         return;
@@ -281,9 +279,8 @@ void touchArquivo(char *caminho){
     printf("Cheguei no final do while.\n");
   }
 
-  printf("Sai do while.\n");
   /* se chegou aqui entao o arquivo nao existe e sera criado */
-  strcpy(arq.nome, paradas[i+1]);
+  strcpy(arq.nome, str);
   arq.tamBytes = 0;
   arq.instCriado = dir.instAcessado;
   arq.instModificado = arq.instCriado;
@@ -313,7 +310,6 @@ void touchArquivo(char *caminho){
     else fseek(unidade, endvago, SEEK_SET);
     wasted -= sizeof(Arquivo);
   }
-
   dir.diretorio++;
   dir.tamBytes += sizeof(Arquivo);
 
