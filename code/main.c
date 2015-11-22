@@ -521,6 +521,127 @@ void mkDir(char *caminho){
   fwrite(&livres, sizeof(livres), 1, unidade);
 }
 
+void rmDirRec(int end){
+  Arquivo arq, dir;
+  char **paradas = NULL;
+  char str[MAXCHAR];
+  int arquivos, bloco, i, j, aux;
+
+  dir = leArquivo(end);
+  bloco = dir.bloco;
+  
+  if (dir.diretorio >= 0){ /* estamos removendo um diretorio */
+    bloco = dir.bloco;
+    arquivos = dir.diretorio;
+    j = 0;
+    i = 0;
+    fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+
+    while (i < arquivos){
+      if (j > ARQPERBLOCK){
+        j = 0;
+        bloco = fat[bloco];
+        fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+      }
+      fread(&arq, sizeof(Arquivo), 1, unidade);
+      if(strlen(arq.nome) != 0){ /* encontrei um arquivo que precisa ser deletado */
+        
+        wasted += sizeof(Arquivo);
+
+        if (arq.diretorio >= 0) { /*se o arquivo que sera deletado e um diretorio */
+          printf("*%s\n", arq.nome); 
+          memcpy(arq.nome, "\0", 1);
+          rmD();
+          wasted -= qtyBlock(arq.bloco)*BLOCKSIZE - arq.diretorio*sizeof(Arquivo);
+          fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
+          fwrite(&arq, sizeof(Arquivo), 1, unidade);
+          rmDirRec(bloco*BLOCKSIZE + j*sizeof(Arquivo));
+        }
+        
+        else { /* caso contrario */
+          printf("%s\n", arq.nome); 
+          memcpy(arq.nome, "\0", 1);
+          rmF();
+          if(arq.tamBytes%BLOCKSIZE != 0) wasted -= BLOCKSIZE - (arq.tamBytes%BLOCKSIZE);
+          fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
+          fwrite(&arq, sizeof(Arquivo), 1, unidade);
+          rmDirRec(bloco*BLOCKSIZE + j*sizeof(Arquivo));
+        }
+        i++;
+      }
+      j++;
+    }
+
+  }
+
+  for (bloco = dir.bloco; bloco != -1; bloco = aux){
+    aux = fat[bloco];
+    setFAT(-1, bloco);
+    setBloco(bloco, 0);
+    livres++;
+  }
+  
+  fseek(unidade, end, SEEK_SET);
+  fwrite(&dir, sizeof(Arquivo), 1, unidade);
+  fseek(unidade, WASTESEEK, SEEK_SET);
+  fwrite(&wasted, sizeof(wasted), 1, unidade);
+  fwrite(&livres, sizeof(livres), 1, unidade);
+  return;
+}
+
+void rmDir(char *caminho){
+  Arquivo arq, dir;
+  char **paradas = NULL;
+  char str[MAXCHAR];
+  int end, arquivos, bloco, i, j, aux;
+
+  end = getArquivo(caminho, PAI);
+  dir = leArquivo(end);
+  paradas = tokenize(caminho, "/");
+  for(i = 0; paradas[i+1] != NULL; i++);
+  strcpy(str, paradas[i]);
+
+  bloco = dir.bloco;
+  arquivos = dir.diretorio;
+  j = 0;
+  i = 0;
+  fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+
+  while (i < arquivos){
+    if (j > ARQPERBLOCK){
+      j = 0;
+      bloco = fat[bloco];
+      fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+    }
+    fread(&arq, sizeof(Arquivo), 1, unidade);
+    if(strlen(arq.nome) != 0){
+      if (strcmp(arq.nome, str) == 0){
+        memcpy(arq.nome, "\0", 1);
+        wasted += sizeof(Arquivo);
+        dir.diretorio--;
+        dir.tamBytes -= sizeof(Arquivo);
+        rmD();
+        wasted -= qtyBlock(arq.bloco)*BLOCKSIZE - arq.diretorio*sizeof(Arquivo);
+        fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
+        fwrite(&arq, sizeof(Arquivo), 1, unidade);
+        fseek(unidade, end, SEEK_SET);
+        fwrite(&dir, sizeof(Arquivo), 1, unidade);
+        fseek(unidade, WASTESEEK, SEEK_SET);
+        fwrite(&wasted, sizeof(wasted), 1, unidade);
+        fwrite(&livres, sizeof(livres), 1, unidade);
+
+        printf("Lista de arquivos deletados (diretorios marcados com '*'):\n");
+        rmDirRec(bloco*BLOCKSIZE + j*sizeof(Arquivo));
+        return;
+      }
+      i++;
+    }
+    j++;
+  }
+}
+
+
+
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
@@ -630,16 +751,16 @@ int main(){
       else if (argv[2] == NULL) printf("cp: insira o caminho do destino.\n");
       else cpArquivo(argv[1], argv[2]);
     }
-  	else if (strcmp(argv[0], "mkdir") == 0) {
+    else if (strcmp(argv[0], "mkdir") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
       else mkDir(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "rmdir") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else rmDir(argv[1]);
 
-  	}
+    }
     else if (strcmp(argv[0], "cat") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
       else if (argv[1] == NULL) printf("cat: insira o caminho do arquivo.\n");

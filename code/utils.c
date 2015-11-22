@@ -92,8 +92,15 @@ int procuraBloco(){
   return livre;
 }
 
-int qtyBlocks(int arquivos){
-	return (arquivos/ARQPERBLOCK)+1;
+int qtyBlock(int bloco0){
+	int i = 1;
+
+	while (bloco0 != -1){
+		bloco0 = fat[bloco0];
+		i++;
+	}
+
+	return i;
 }
 
 void setFAT(int conteudo, int posicao){

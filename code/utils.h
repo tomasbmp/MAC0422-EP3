@@ -58,6 +58,6 @@ int devolveBit(int posicao, unsigned char byte);
 
 int procuraBloco();
 
-int qtyBlocks(int arquivos);
+int qtyBlock(int arquivos);
 
 void setFAT(int conteudo, int posicao);
