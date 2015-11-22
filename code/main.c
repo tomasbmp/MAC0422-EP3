@@ -76,7 +76,6 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int endereco,  int o
     /* se reservamos mais do que o tamanho total do diretorio,
     condicao de parada: nao encontramos o arquivo */
   }
-  /* printf("nao encontrei %s em %s\n", paradas[i], paradas[i-1]); */
   return -1;
 }
 
