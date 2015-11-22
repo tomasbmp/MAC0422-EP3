@@ -247,6 +247,10 @@ void touchArquivo(char *caminho){
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
   paradas = tokenize(caminho, "/");
+  for(i = 0; paradas[i] != NULL; i++){
+    printf("parada %d: nome: %s\n", i, paradas[i]);
+  }
+  printf("i: %d\n", i);
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(str, paradas[i]);
 
@@ -364,10 +368,13 @@ void lsArquivo(char *caminho){
 void mkDir(char *caminho){
   Arquivo dir, novo, arq;
   int i, arquivos, end, bloco, newblock = FALSE;
-  char **paradas;
+  char *str, **paradas = NULL;
+
+  str = caminho;
 
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
+  printf("diretorio pai: %s\n", dir.nome);
 
   if(end == -1){
     printf("Diretorio de destino inexistente.\n");
@@ -398,8 +405,13 @@ void mkDir(char *caminho){
   }
   else wasted -= sizeof(Arquivo);
 
+  printf("caminho: %s\n", caminho);
   paradas = tokenize(caminho, "/");
+  for(i = 0; paradas[i] != NULL; i++){
+    printf("parada %d: nome: %s\n", i, paradas[i]);
+  }
   for(i = 0; paradas[i+1] != NULL; i++);
+  printf("i: %d, nome: %s\n", i, paradas[i+1]);
   strcpy(novo.nome, paradas[i]);
   novo.tamBytes = 0;
   novo.instCriado = time(NULL);
@@ -466,9 +478,6 @@ int main(){
 
     add_history(input);
     argv = tokenize(input, " ");
-    /* free(input);
-    input = NULL; */
-
 
   	if (strcmp(argv[0], "mount") == 0) {
       if(mounted == FALSE){
