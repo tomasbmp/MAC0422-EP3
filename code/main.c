@@ -343,10 +343,12 @@ void lsArquivo(char *caminho){
 
   tamanho = dir.diretorio;
   fseek(unidade, bloco*BLOCKSIZE, SEEK_SET);
+  printf("quantidade de arquivos = %d\n", dir.diretorio);
   if(dir.diretorio == 0) (printf("Este diretorio esta vazio.\n"));
   else printf ("\nd?|    nome    | tamanho em bytes | ultima modificacao\n");
   j = 0;
-  for(i = 0; i < tamanho; i++){
+  i = 0;
+  while(i < tamanho){
     if(j >= ARQPERBLOCK ){
       j = 0;
       bloco = fat[bloco];
@@ -369,7 +371,7 @@ void lsArquivo(char *caminho){
   }
 }
 
-void rmArquivo(char *caminho, int option){
+void rmArquivo(char *caminho){
   Arquivo arq, dir;
   char **paradas = NULL;
   char str[MAXCHAR];
@@ -377,6 +379,7 @@ void rmArquivo(char *caminho, int option){
 
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
+  paradas = tokenize(caminho, "/");
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(str, paradas[i]);
   
@@ -404,6 +407,7 @@ void rmArquivo(char *caminho, int option){
         fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
         fwrite(&arq, sizeof(Arquivo), 1, unidade);
         for (bloco = arq.bloco; bloco != -1; bloco = aux){
+          
           aux = fat[bloco];
           setFAT(-1, bloco);
           setBloco(bloco, 0);
@@ -552,13 +556,14 @@ int main(){
     }
     else if (strcmp(argv[0], "touch") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else if (argv[1] == NULL) printf("cat: insira o caminho do arquivo.\n");
+      else if (argv[1] == NULL) printf("touch: insira o caminho do arquivo.\n");
       else touchArquivo(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "rm") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else if (argv[1] == NULL) printf("rm: insira o caminho do arquivo.\n");
+      else rmArquivo(argv[1]);
 
   	}
   	else if (strcmp(argv[0], "ls") == 0) {
