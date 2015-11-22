@@ -1,0 +1,4 @@
+mount unidade
+cp 1Mb.txt /
+rm /1Mb.txt
+sai
