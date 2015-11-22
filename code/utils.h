@@ -14,12 +14,12 @@ Tomás Marcondes Bezerra Paim - 7157602
 
 #define BLOCKSIZE 4000
 #define MAPSIZE 3125
+#define ARQPERBLOCK (BLOCKSIZE/sizeof(Arquivo))
 #define WASTESEEK MAPSIZE
 #define LIVRESSEEK (MAPSIZE+4)
 #define QTYDSEEK (MAPSIZE+8)
 #define QTYFSEEK (MAPSIZE+12)
 #define ROOTSEEK (MAPSIZE+16)
-#define ARQPERBLOCK (BLOCKSIZE/sizeof(Arquivo))
 #define MAXCHAR 256
 #define TRUE 1
 #define FALSE 0
@@ -38,7 +38,7 @@ struct arquivo
   time_t 	instCriado;
   time_t 	instModificado;
   time_t 	instAcessado;
-  int     	bloco;
+  int     bloco;
   int 		diretorio;
 };
 
