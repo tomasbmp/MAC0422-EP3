@@ -267,7 +267,7 @@ void touchArquivo(char *caminho){
     }
     fread(&arq, sizeof(Arquivo), 1, unidade);
     if(strlen(arq.nome) != 0){
-      if (strcmp(arq.nome, str) == 0){  
+      if (strcmp(arq.nome, str) == 0){
         arq.instAcessado = dir.instAcessado;
         fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
         fwrite(&arq, sizeof(Arquivo), 1, unidade);
@@ -618,7 +618,7 @@ void mkDir(char *caminho){
   setBloco(novo.bloco, 1);
   livres--;
 
-  addF();
+  addD();
   writeLivres();
   writeWasted();
 }
