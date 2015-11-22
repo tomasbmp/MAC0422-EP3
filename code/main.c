@@ -364,6 +364,10 @@ void lsArquivo(char *caminho){
   }
 }
 
+void rmArquivo(char *caminho, int option){
+  
+}
+
 int main(){
   char*  input, shell_prompt[MAXCHAR];
   char** argv = NULL;
