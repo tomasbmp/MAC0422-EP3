@@ -1,0 +1,4 @@
+mount unidade
+cp 30Mb.txt /
+rm /30Mb.txt
+sai
