@@ -256,10 +256,6 @@ void touchArquivo(char *caminho){
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
   paradas = tokenize(caminho, "/");
-  for(i = 0; paradas[i] != NULL; i++){
-    printf("parada %d: nome: %s\n", i, paradas[i]);
-  }
-  printf("i: %d\n", i);
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(str, paradas[i]);
 
@@ -472,6 +468,8 @@ void mkDir(char *caminho){
   }
   else wasted -= sizeof(Arquivo);
 
+  wasted += BLOCKSIZE;
+
   paradas = tokenize(caminho, "/");
   for(i = 0; paradas[i+1] != NULL; i++);
   strcpy(novo.nome, paradas[i]);
@@ -523,8 +521,6 @@ void mkDir(char *caminho){
 
 void rmDirRec(int end){
   Arquivo arq, dir;
-  char **paradas = NULL;
-  char str[MAXCHAR];
   int arquivos, bloco, i, j, aux;
 
   dir = leArquivo(end);
@@ -545,21 +541,18 @@ void rmDirRec(int end){
       }
       fread(&arq, sizeof(Arquivo), 1, unidade);
       if(strlen(arq.nome) != 0){ /* encontrei um arquivo que precisa ser deletado */
-        
-        wasted += sizeof(Arquivo);
-
         if (arq.diretorio >= 0) { /*se o arquivo que sera deletado e um diretorio */
-          printf("*%s\n", arq.nome); 
+          printf("*%s\n", arq.nome);
           memcpy(arq.nome, "\0", 1);
           rmD();
-          wasted -= qtyBlock(arq.bloco)*BLOCKSIZE - arq.diretorio*sizeof(Arquivo);
+          wasted -= (qtyBlock(arq.bloco)*BLOCKSIZE - arq.diretorio*sizeof(Arquivo));
           fseek(unidade, bloco*BLOCKSIZE + j*sizeof(Arquivo), SEEK_SET);
           fwrite(&arq, sizeof(Arquivo), 1, unidade);
           rmDirRec(bloco*BLOCKSIZE + j*sizeof(Arquivo));
         }
         
         else { /* caso contrario */
-          printf("%s\n", arq.nome); 
+          printf("%s\n", arq.nome);
           memcpy(arq.nome, "\0", 1);
           rmF();
           if(arq.tamBytes%BLOCKSIZE != 0) wasted -= BLOCKSIZE - (arq.tamBytes%BLOCKSIZE);
@@ -593,7 +586,7 @@ void rmDir(char *caminho){
   Arquivo arq, dir;
   char **paradas = NULL;
   char str[MAXCHAR];
-  int end, arquivos, bloco, i, j, aux;
+  int end, arquivos, bloco, i, j;
 
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
@@ -616,9 +609,10 @@ void rmDir(char *caminho){
     fread(&arq, sizeof(Arquivo), 1, unidade);
     if(strlen(arq.nome) != 0){
       if (strcmp(arq.nome, str) == 0){
+        printf("Lista de arquivos deletados (diretorios marcados com '*'):\n");
+        printf("*%s\n", arq.nome);
         memcpy(arq.nome, "\0", 1);
         wasted += sizeof(Arquivo);
-        dir.diretorio--;
         dir.tamBytes -= sizeof(Arquivo);
         rmD();
         wasted -= qtyBlock(arq.bloco)*BLOCKSIZE - arq.diretorio*sizeof(Arquivo);
@@ -630,7 +624,6 @@ void rmDir(char *caminho){
         fwrite(&wasted, sizeof(wasted), 1, unidade);
         fwrite(&livres, sizeof(livres), 1, unidade);
 
-        printf("Lista de arquivos deletados (diretorios marcados com '*'):\n");
         rmDirRec(bloco*BLOCKSIZE + j*sizeof(Arquivo));
         return;
       }
@@ -664,6 +657,8 @@ int main(){
 
   	if (strcmp(argv[0], "mount") == 0) {
       if(mounted == FALSE){
+          if (unidade != NULL)
+            fclose (unidade);
           unidade = fopen(argv[1], "r+");
           if(unidade == NULL){ /* arquivo não existe e deve ser criado */
             unidade = fopen(argv[1], "w+");
@@ -792,7 +787,12 @@ int main(){
   	}
   	else if (strcmp(argv[0], "df") == 0) {
       if(mounted == FALSE) printf("Monte uma unidade antes de realizar este comando.\n");
-      else {}
+      else {
+        printf("Quantidade de diretorios: %d\n", qtyD);
+        printf("Quantidade de arquivos (nao diretorios): %d\n", qtyF);
+        printf("Espaco livre: %d bytes\n", (livres*BLOCKSIZE));
+        printf("Espaco desperdicado: %d bytes\n", wasted);
+      }
 
   	}
   	else if (strcmp(argv[0], "umount") == 0) {
@@ -800,7 +800,6 @@ int main(){
 
       else {
         mounted = FALSE;
-        fclose(unidade);
         printf("Unidade desmontada com sucesso.\n");
       }
 

@@ -93,7 +93,7 @@ int procuraBloco(){
 }
 
 int qtyBlock(int bloco0){
-	int i = 1;
+	int i = 0;
 
 	while (bloco0 != -1){
 		bloco0 = fat[bloco0];
