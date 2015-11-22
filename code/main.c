@@ -51,7 +51,7 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int endereco,  int o
       break;
   }
 
-  
+
   bloco = diretorio.bloco;
 
   fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
@@ -69,16 +69,17 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int endereco,  int o
       fseek(unidade, bloco * BLOCKSIZE, SEEK_SET);
     }
     /* "reserva" o espaço a ser lido */
-    
+
     fread(&arq, sizeof(Arquivo), 1, unidade);
     if (strcmp(paradas[i], arq.nome) == 0) return getArquivoRec(paradas, i+1, arq, bloco*BLOCKSIZE + j*sizeof(Arquivo), option);
     j ++;
     /* se reservamos mais do que o tamanho total do diretorio,
     condicao de parada: nao encontramos o arquivo */
   }
+  return -1;
 }
 
-  
+
 
 int getArquivo(char *caminho, int option){
   Arquivo root;
@@ -123,7 +124,7 @@ void catArquivo(char *caminho){
 void cpArquivo(char *origem, char *destino){
   Arquivo dir, novo, arq;
   FILE *file_origem = NULL;
-  int i, bloco, tamanho, newblock = FALSE, end, arquivos, j;
+  int i, bloco, tamanho, newblock = FALSE, end, arquivos;
   char c, **paradas = NULL;
 
   file_origem = fopen(origem, "r");
@@ -221,7 +222,7 @@ void cpArquivo(char *origem, char *destino){
     if(i >= BLOCKSIZE){
       tamanho -= BLOCKSIZE;
       i = 0;
-      newblock = procuraBloco(bitmap);    
+      newblock = procuraBloco(bitmap);
       setFAT(newblock, bloco);
       setFAT(-1, newblock);
       setBloco(newblock, 1);
@@ -331,9 +332,6 @@ int main(){
   Arquivo novo;
 
   unidade = NULL;
-
-  printf("sizeof(Arquivo) = %lu\n", sizeof(Arquivo));
-
   rawtime = time(NULL);
   printf(ctime(&rawtime));
 
