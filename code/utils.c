@@ -41,11 +41,8 @@ void rmF(){
 char **tokenize(char *str, char *separator) {
   char **tokens = NULL;
   int i;
-
-
+  
   tokens = malloc(sizeof (char*) * MAXCHAR);
-  for(i = 0; i < MAXCHAR; i++)
-    tokens[i] = NULL;
 
   tokens[0] = strtok(str, separator);
 

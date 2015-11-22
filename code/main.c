@@ -72,22 +72,30 @@ int getArquivoRec(char **paradas, int i, Arquivo diretorio, int endereco,  int o
 
     fread(&arq, sizeof(Arquivo), 1, unidade);
     if (strcmp(paradas[i], arq.nome) == 0) return getArquivoRec(paradas, i+1, arq, bloco*BLOCKSIZE + j*sizeof(Arquivo), option);
-    j ++;
+    j++;
     /* se reservamos mais do que o tamanho total do diretorio,
     condicao de parada: nao encontramos o arquivo */
   }
+  /* printf("nao encontrei %s em %s\n", paradas[i], paradas[i-1]); */
   return -1;
 }
 
 int getArquivo(char *caminho, int option){
   Arquivo root;
-  char **paradas = NULL;
+  char **paradas = NULL, *path;
+  int end;
+
+  path = malloc(sizeof(char)*MAXCHAR);
+  strcpy(path, caminho);
 
   fseek(unidade, ROOTSEEK, SEEK_SET);
   fread(&root, sizeof(Arquivo), 1, unidade);
 
-  paradas = tokenize(caminho, "/");
-  return getArquivoRec(paradas, 0, root, ROOTSEEK, option);
+  paradas = tokenize(path, "/");
+  end = getArquivoRec(paradas, 0, root, ROOTSEEK, option);
+  free(paradas);
+  free(path);
+  return end;
 }
 
 void catArquivo(char *caminho){
@@ -368,20 +376,19 @@ void lsArquivo(char *caminho){
 void mkDir(char *caminho){
   Arquivo dir, novo, arq;
   int i, arquivos, end, bloco, newblock = FALSE;
-  char *str, **paradas = NULL;
-
-  str = caminho;
+  char **paradas = NULL;
 
   end = getArquivo(caminho, PAI);
   dir = leArquivo(end);
-  printf("diretorio pai: %s\n", dir.nome);
 
   if(end == -1){
     printf("Diretorio de destino inexistente.\n");
+    free(paradas);
     return;
   }
   else if(dir.diretorio < 0){
     printf("O destino deve ser um diretorio.\n");
+    free(paradas);
     return;
   }
 
@@ -405,13 +412,8 @@ void mkDir(char *caminho){
   }
   else wasted -= sizeof(Arquivo);
 
-  printf("caminho: %s\n", caminho);
   paradas = tokenize(caminho, "/");
-  for(i = 0; paradas[i] != NULL; i++){
-    printf("parada %d: nome: %s\n", i, paradas[i]);
-  }
   for(i = 0; paradas[i+1] != NULL; i++);
-  printf("i: %d, nome: %s\n", i, paradas[i+1]);
   strcpy(novo.nome, paradas[i]);
   novo.tamBytes = 0;
   novo.instCriado = time(NULL);
